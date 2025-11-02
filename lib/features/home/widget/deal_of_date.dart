@@ -48,6 +48,7 @@ class _DealOfDayState extends State<DealOfDay> {
         ),
       );
     }
+    //deal
     return product == null
         ? const Loader()
         : product!.name.isEmpty
