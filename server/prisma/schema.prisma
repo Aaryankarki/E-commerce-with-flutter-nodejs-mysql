@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  password String
+  address  String  @default("")
+  type     String  @default("user")
+
+  cart     Cart[]
+  ratings  Rating[]
+  orders   Order[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  images      Json
+  quantity    Int
+  price       Float
+  category    String
+
+  ratings     Rating[]
+  cart        Cart[]
+  orderItems  OrderProduct[]
+}
+
+model Rating {
+  id        Int     @id @default(autoincrement())
+  rating    Int
+
+  userId    Int
+  productId Int
+
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Cart {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+
+  userId    Int
+  productId Int
+
+  user      User    @relation(fields: [userId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id         Int            @id @default(autoincrement())
+  totalPrice Float
+  address    String
+  orderedAt  DateTime       @default(now())
+  status     String         @default("pending")
+
+  userId     Int
+  user       User           @relation(fields: [userId], references: [id])
+
+  products   OrderProduct[]
+}
+
+model OrderProduct {
+  id        Int     @id @default(autoincrement())
+  quantity  Int
+
+  orderId   Int
+  productId Int
+
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  transactionId String?
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
