@@ -4,6 +4,7 @@ const authRouter = require("./router/auth.js");
 const adminRouter = require("./router/admin.js");
 const productRouter = require("./router/product.js");
 const userRouter = require("./router/user.js");
+const configRouter = require("./router/config.js");
 const PORT = 3000;
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(authRouter);
 app.use(adminRouter);
 app.use(productRouter);
 app.use(userRouter);
+app.use(configRouter);
 
 
 app.listen(PORT, () => {

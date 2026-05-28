@@ -9,6 +9,7 @@ import 'package:prisma_orm/features/home/screens/home_screens.dart';
 import 'package:prisma_orm/features/orders_details/screens/order_details.dart';
 import 'package:prisma_orm/features/product_details/screens/product_details.dart';
 import 'package:prisma_orm/features/search/screens/search_screen.dart';
+import 'package:prisma_orm/features/account/screens/wishlist_screen.dart';
 import 'package:prisma_orm/models/order.dart';
 import 'package:prisma_orm/models/product.dart';
 
@@ -53,11 +54,13 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
         builder: (_) => ProductDetailScreen(product: product),
       );
     case AddressScreen.routeName:
-      var totalAmount = routeSettings.arguments as String;
+      var args = routeSettings.arguments as Map<String, dynamic>? ?? {};
+      var totalAmount = args['totalAmount'] as String? ?? '0';
+      var buyNowProduct = args['buyNowProduct'] as Product?;
 
       return MaterialPageRoute(
         settings: routeSettings,
-        builder: (_) => AddressScreen(totalAmount: totalAmount),
+        builder: (_) => AddressScreen(totalAmount: totalAmount, buyNowProduct: buyNowProduct),
       );
       case OrderDetailScreen.routeName:
       var order = routeSettings.arguments as Order;
@@ -65,6 +68,11 @@ Route<dynamic> generateRoute(RouteSettings routeSettings) {
       return MaterialPageRoute(
         settings: routeSettings,
         builder: (_) => OrderDetailScreen(order: order),
+      );
+      case WishlistScreen.routeName:
+      return MaterialPageRoute(
+        settings: routeSettings,
+        builder: (_) => const WishlistScreen(),
       );
     default:
       return MaterialPageRoute(

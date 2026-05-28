@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:prisma_orm/constants/error_handling.dart';
@@ -43,7 +42,6 @@ class HomeServices {
   }
 
   Future<Product> fetchDealOfDay(BuildContext context) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
     Product product = Product(
       name: '',
       description: '',
@@ -51,20 +49,23 @@ class HomeServices {
       images: [],
       category: '',
       price: 0,
-    ); 
+    );
     try {
       http.Response res = await http.get(
         Uri.parse('$uri/api/deal-of-day'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'x-auth-token': userProvider.user.token,
         },
       );
       httpErrorHandle(
         response: res,
         context: context,
         onSuccess: () {
-          product = Product.fromJson(res.body);
+          var data = jsonDecode(res.body);
+          // Only use API response if it has valid data
+          if (data != null && data.isNotEmpty && data['name'] != null) {
+            product = Product.fromJson(res.body);
+          }
         },
       );
     } catch (e) {

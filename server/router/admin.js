@@ -47,9 +47,10 @@ adminRouter.get('/admin/get-products', admin, async (req, res) => {
 adminRouter.delete('/admin/delete-product', admin, async (req, res) => {
   try {
     const { id } = req.body;
+    const productIdInt = parseInt(id);
 
     const product = await prisma.product.delete({
-      where: { id },
+      where: { id: productIdInt },
     });
 
     res.json(product);
@@ -84,9 +85,10 @@ adminRouter.get('/admin/get-orders', admin, async (req, res) => {
 adminRouter.post('/admin/change-order-status', admin, async (req, res) => {
   try {
     const { id, status } = req.body;
+    const orderIdInt = parseInt(id);
 
     const order = await prisma.order.update({
-      where: { id },
+      where: { id: orderIdInt },
       data: { status },
       include: {
         products: {

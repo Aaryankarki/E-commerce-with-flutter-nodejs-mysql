@@ -8,16 +8,16 @@ import 'package:prisma_orm/constants/payment_config.dart';
 import 'package:prisma_orm/constants/utils.dart';
 import 'package:prisma_orm/features/address/services/address_service.dart';
 import 'package:prisma_orm/providers/user_provider.dart';
-
-
+import 'package:prisma_orm/models/product.dart';
 import 'package:provider/provider.dart';
 
 class AddressScreen extends StatefulWidget {
   // final String pidx;
   final String totalAmount;
+  final Product? buyNowProduct;
 
   static const String routeName = '/address';
-  const AddressScreen({Key? key, required this.totalAmount}) : super(key: key);
+  const AddressScreen({Key? key, required this.totalAmount, this.buyNowProduct}) : super(key: key);
 
   @override
   State<AddressScreen> createState() => _AddressScreenState();
@@ -103,6 +103,7 @@ class _AddressScreenState extends State<AddressScreen> {
       context: context,
       address: addressToBeUsed,
       totalSum: double.parse(widget.totalAmount),
+      buyNowProduct: widget.buyNowProduct,
     );
   }
 
@@ -120,6 +121,7 @@ class _AddressScreenState extends State<AddressScreen> {
       context: context,
       address: addressToBeUsed,
       totalSum: double.parse(widget.totalAmount),
+      buyNowProduct: widget.buyNowProduct,
     );
   }
 

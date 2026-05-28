@@ -8,6 +8,7 @@ import 'package:prisma_orm/constants/global_variable.dart';
 import 'package:prisma_orm/constants/utils.dart';
 import 'package:prisma_orm/features/product_details/services/product_details_services.dart';
 import 'package:prisma_orm/features/search/screens/search_screen.dart';
+import 'package:prisma_orm/features/address/screens/address_screen.dart';
 import 'package:prisma_orm/models/product.dart';
 import 'package:prisma_orm/providers/user_provider.dart';
 import 'package:provider/provider.dart';
@@ -24,22 +25,49 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final ProductDetailsServices productDetailsServices =
       ProductDetailsServices();
+  late Product product;
   double avgRating = 0;
   double myRatings = 0;
+  bool isFavorited = false;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    // TODO: implement initState
+    product = widget.product;
+    calculateRatings();
+    // Determine if product is already in favorites
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    isFavorited = userProvider.user.favorites.map((e) => e.toString()).contains(product.id);
+    // Listen for changes to update favorite status
+    userProvider.addListener(() {
+      final fav = userProvider.user.favorites;
+      final now = fav.map((e) => e.toString()).contains(product.id);
+      if (now != isFavorited) {
+        isFavorited = now;
+        setState(() {});
+      }
+    });
+  }
+    
+
+  void calculateRatings() {
     double totalRating = 0;
-    for (int i = 0; i < widget.product.rating!.length; i++) {
-      totalRating += widget.product.rating![i].rating;
-      if (widget.product.rating![i].userId ==
+    myRatings = 0;
+    for (int i = 0; i < product.rating!.length; i++) {
+      totalRating += product.rating![i].rating;
+      if (product.rating![i].userId ==
           Provider.of<UserProvider>(context, listen: false).user.id) {
-        myRatings = widget.product.rating![i].rating;
+        myRatings = product.rating![i].rating;
       }
     }
+    // Update favorite status after ratings maybe changed
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    isFavorited = userProvider.user.favorites.map((e) => e.toString()).contains(product.id);
+
     if (totalRating != 0) {
-      avgRating = totalRating / widget.product.rating!.length;
+      avgRating = totalRating / product.rating!.length;
+    } else {
+      avgRating = 0;
     }
   }
 
@@ -48,7 +76,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   void addToCart() {
-    productDetailsServices.addToCart(context: context, product: widget.product);
+    productDetailsServices.addToCart(context: context, product: product);
     showSnackBar(context, "Product has been added to the cart");
   }
 
@@ -130,8 +158,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(widget.product.id!),
-                  Stars(rating: avgRating),
+                  Text(product.id!),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          isFavorited ? Icons.favorite : Icons.favorite_border,
+                          color: Colors.red,
+                        ),
+                        onPressed: () async {
+                          if (isFavorited) {
+                            await productDetailsServices.removeFavorite(
+                              context: context,
+                              productId: product.id!,
+                            );
+                          } else {
+                            await productDetailsServices.addFavorite(
+                              context: context,
+                              productId: product.id!,
+                            );
+                          }
+                        },
+                      ),
+                      Stars(rating: avgRating),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -140,10 +191,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 vertical: 20,
                 horizontal: 10,
               ),
-              child: Text(widget.product.name, style: TextStyle(fontSize: 15)),
+              child: Text(product.name, style: TextStyle(fontSize: 15)),
             ),
             CarouselSlider(
-              items: widget.product.images.map((i) {
+              items: product.images.map((i) {
                 return Builder(
                   builder: (BuildContext context) =>
                       Image.network(i, fit: BoxFit.contain, height: 200),
@@ -174,7 +225,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   children: [
                     TextSpan(
-                      text: '\$${widget.product.price}',
+                      text: '\$${product.price}',
                       style: TextStyle(
                         fontSize: 22,
                         color: Colors.red,
@@ -187,12 +238,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(widget.product.description),
+              child: Text(product.description),
             ),
-            Container(color: Colors.black12, height: 5),
             Padding(
               padding: const EdgeInsets.all(10),
-              child: CustomButtom(text: 'Buy Now', onTap: () {}),
+              child: CustomButtom(
+                text: 'Buy Now',
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    AddressScreen.routeName,
+                    arguments: {
+                      'totalAmount': product.price.toString(),
+                      'buyNowProduct': product,
+                    },
+                  );
+                },
+              ),
             ),
             SizedBox(height: 10),
             Padding(
@@ -220,12 +282,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               itemPadding: EdgeInsets.symmetric(horizontal: 4),
               itemBuilder: (context, _) =>
                   Icon(Icons.star, color: GlobalVariables.secondaryColor),
-              onRatingUpdate: (rating) {
-                productDetailsServices.rateProduct(
+              onRatingUpdate: (rating) async {
+                Product? updatedProduct = await productDetailsServices.rateProduct(
                   context: context,
-                  product: widget.product,
+                  product: product,
                   rating: rating,
                 );
+                if (updatedProduct != null) {
+                  setState(() {
+                    product = updatedProduct;
+                    calculateRatings();
+                  });
+                }
               },
             ),
           ],

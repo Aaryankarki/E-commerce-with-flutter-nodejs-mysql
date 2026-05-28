@@ -8,6 +8,7 @@ import 'package:prisma_orm/constants/global_variable.dart';
 import 'package:prisma_orm/constants/utils.dart';
 import 'package:prisma_orm/features/auth/screens/auth_screens.dart';
 import 'package:prisma_orm/models/order.dart';
+import 'package:prisma_orm/models/product.dart';
 import 'package:prisma_orm/providers/user_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -40,6 +41,38 @@ class AccountService {
       showSnackBar(context, e.toString());
     }
     return orderList;
+  }
+
+  Future<List<Product>> fetchWishlist(BuildContext context) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    List<Product> productList = [];
+    try {
+      http.Response res = await http.get(
+        Uri.parse('$uri/api/favorites'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'x-auth-token': userProvider.user.token,
+        },
+      );
+
+      if (!context.mounted) return productList;
+      httpErrorHandle(
+        response: res,
+        context: context,
+        onSuccess: () {
+          for (int i = 0; i < jsonDecode(res.body).length; i++) {
+            productList.add(
+              Product.fromJson(jsonEncode(jsonDecode(res.body)[i])),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      if (context.mounted) {
+        showSnackBar(context, e.toString());
+      }
+    }
+    return productList;
   }
 
   void logOut(BuildContext context) async {

@@ -14,6 +14,7 @@ model User {
   password String
   address  String  @default("")
   type     String  @default("user")
+  favorites Json?
 
   cart     Cart[]
   ratings  Rating[]
@@ -36,7 +37,7 @@ model Product {
 
 model Rating {
   id        Int     @id @default(autoincrement())
-  rating    Int
+  rating    Float
 
   userId    Int
   productId Int
@@ -99,4 +100,15 @@ enum PaymentStatus {
   PENDING
   COMPLETED
   FAILED
+}
+
+model Carousel {
+  id       Int    @id @default(autoincrement())
+  imageUrl String
+}
+
+model Category {
+  id       Int    @id @default(autoincrement())
+  title    String
+  imageUrl String
 }

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:prisma_orm/features/account/services/account_service.dart';
 import 'package:prisma_orm/features/account/widget/account_button.dart';
+import 'package:prisma_orm/features/account/screens/wishlist_screen.dart';
 
 class TopButtons extends StatefulWidget {
   const TopButtons({super.key});
@@ -26,7 +27,12 @@ class _TopButtonsState extends State<TopButtons> {
           children: [
             AccountButton(text: 'Logout', onTap: ()=>
             AccountService().logOut(context)),
-            AccountButton(text: 'Your Wish List', onTap: () {}),
+            AccountButton(
+              text: 'Your Wish List',
+              onTap: () {
+                Navigator.pushNamed(context, WishlistScreen.routeName);
+              },
+            ),
           ],
         ),
       ],

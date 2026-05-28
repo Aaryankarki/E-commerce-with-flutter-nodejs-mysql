@@ -4,6 +4,7 @@ import 'package:prisma_orm/constants/global_variable.dart';
 import 'package:prisma_orm/features/admin/screens/analytics.dart';
 import 'package:prisma_orm/features/admin/screens/order_screens.dart';
 import 'package:prisma_orm/features/admin/screens/posts_screen.dart';
+import 'package:prisma_orm/features/admin/screens/admin_profile_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -17,7 +18,7 @@ class _AdminScreenState extends State<AdminScreen> {
   double buttomBarWidth = 42;
   double bottomBarBorderWidth = 5;
 
-  List<Widget> pages = [PostsScreen(), AnalyticsScreen(), OrdersScreen()];
+  List<Widget> pages = [PostsScreen(), AnalyticsScreen(), OrdersScreen(), AdminProfileScreen()];
 
   void updatePage(int page) {
     setState(() {
@@ -54,6 +55,7 @@ class _AdminScreenState extends State<AdminScreen> {
       ),
       body: pages[_page],
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: _page,
 
         selectedItemColor: GlobalVariables.selectedNavBarColor,
@@ -113,6 +115,24 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ),
               child: Icon(Icons.all_inbox_outlined),
+            ),
+            label: '',
+          ),
+          //Profile
+          BottomNavigationBarItem(
+            icon: Container(
+              width: buttomBarWidth,
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: _page == 3
+                        ? GlobalVariables.selectedNavBarColor
+                        : GlobalVariables.backgroundColor,
+                    width: bottomBarBorderWidth,
+                  ),
+                ),
+              ),
+              child: Icon(Icons.person_outline),
             ),
             label: '',
           ),

@@ -8,7 +8,7 @@ const productRouter = express.Router();
 // =============================
 // GET PRODUCTS BY CATEGORY
 // =============================
-productRouter.get("/api/products", auth, async (req, res) => {
+productRouter.get("/api/products", async (req, res) => {
   try {
     const category = req.query.category;
 
@@ -26,7 +26,7 @@ productRouter.get("/api/products", auth, async (req, res) => {
 // =============================
 // SEARCH PRODUCTS BY NAME
 // =============================
-productRouter.get("/api/products/search/:name", auth, async (req, res) => {
+productRouter.get("/api/products/search/:name", async (req, res) => {
   try {
     const name = req.params.name;
 
@@ -54,9 +54,11 @@ productRouter.post("/api/rate-product", auth, async (req, res) => {
     const { id, rating } = req.body;
     const userId = req.user;
 
+    const productIdInt = parseInt(id);
+
     // Check if product exists
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: { id: productIdInt },
       include: { ratings: true },
     });
 
@@ -67,7 +69,7 @@ productRouter.post("/api/rate-product", auth, async (req, res) => {
     // Delete existing rating if user has already rated
     await prisma.rating.deleteMany({
       where: {
-        productId: id,
+        productId: productIdInt,
         userId: userId,
       },
     });
@@ -76,14 +78,14 @@ productRouter.post("/api/rate-product", auth, async (req, res) => {
     await prisma.rating.create({
       data: {
         rating,
-        productId: id,
+        productId: productIdInt,
         userId,
       },
     });
 
     // Fetch updated product with all ratings
     const updatedProduct = await prisma.product.findUnique({
-      where: { id },
+      where: { id: productIdInt },
       include: { ratings: true },
     });
 
@@ -96,7 +98,7 @@ productRouter.post("/api/rate-product", auth, async (req, res) => {
 // =============================
 // DEAL OF THE DAY
 // =============================
-productRouter.get("/api/deal-of-day", auth, async (req, res) => {
+productRouter.get("/api/deal-of-day", async (req, res) => {
   try {
     let products = await prisma.product.findMany({
       include: { ratings: true },

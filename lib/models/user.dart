@@ -9,6 +9,7 @@ class User {
   final String address;
   final String type;
   final String token;
+  final List<dynamic> favorites;
   final List<dynamic> cart;
 
   User({
@@ -20,7 +21,8 @@ class User {
     required this.type,
     required this.token,
     required this.cart,
-  });
+    List<dynamic>? favorites,
+  }) : favorites = favorites ?? [];
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
@@ -31,6 +33,7 @@ class User {
       'address': address,
       'type': type,
       'token': token,
+      'favorites': favorites,
       'cart': cart,
     };
   }
@@ -44,6 +47,9 @@ class User {
       type: map['type'] ?? 'user', // default to 'user'
       token: map['token'] ?? '', // fallback if null
       email: map['email'] ?? '', // fallback if null
+      favorites: map['favorites'] != null
+          ? List<dynamic>.from(map['favorites'])
+          : [], // empty list if null
       cart: map['cart'] != null
           ? List<dynamic>.from(map['cart'])
           : [], // empty list if null
@@ -63,6 +69,7 @@ class User {
     String? address,
     String? type,
     String? token,
+    List<dynamic>? favorites,
     List<dynamic>? cart,
   }) {
     return User(
@@ -73,6 +80,7 @@ class User {
       address: address ?? this.address,
       type: type ?? this.type,
       token: token ?? this.token,
+      favorites: favorites ?? this.favorites,
       cart: cart ?? this.cart,
     );
   }

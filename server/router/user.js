@@ -13,37 +13,39 @@ userRouter.post("/api/add-to-cart", auth, async (req, res) => {
     const { id } = req.body;
     const userId = req.user;
 
+    const productIdInt = parseInt(id);
+
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: { id: productIdInt },
     });
 
     if (!product) return res.status(404).json({ msg: "Product not found" });
 
-    const existingItem = await prisma.cartItem.findFirst({
+    const existingItem = await prisma.cart.findFirst({
       where: {
         userId,
-        productId: id,
+        productId: productIdInt,
       },
     });
 
     if (existingItem) {
       // Increase quantity
-      await prisma.cartItem.update({
+      await prisma.cart.update({
         where: { id: existingItem.id },
         data: { quantity: { increment: 1 } },
       });
     } else {
       // Add new item to cart
-      await prisma.cartItem.create({
+      await prisma.cart.create({
         data: {
           userId,
-          productId: id,
+          productId: productIdInt,
           quantity: 1,
         },
       });
     }
 
-    const updatedCart = await prisma.cartItem.findMany({
+    const updatedCart = await prisma.cart.findMany({
       where: { userId },
       include: { product: true },
     });
@@ -62,8 +64,8 @@ userRouter.delete("/api/remove-from-cart/:id", auth, async (req, res) => {
     const { id } = req.params; // productId
     const userId = req.user;
 
-    const cartItem = await prisma.cartItem.findFirst({
-      where: { userId, productId: id },
+    const cartItem = await prisma.cart.findFirst({
+      where: { userId, productId: parseInt(id) },
     });
 
     if (!cartItem) {
@@ -71,17 +73,17 @@ userRouter.delete("/api/remove-from-cart/:id", auth, async (req, res) => {
     }
 
     if (cartItem.quantity === 1) {
-      await prisma.cartItem.delete({
+      await prisma.cart.delete({
         where: { id: cartItem.id },
       });
     } else {
-      await prisma.cartItem.update({
+      await prisma.cart.update({
         where: { id: cartItem.id },
         data: { quantity: { decrement: 1 } },
       });
     }
 
-    const updatedCart = await prisma.cartItem.findMany({
+    const updatedCart = await prisma.cart.findMany({
       where: { userId },
       include: { product: true },
     });
@@ -121,7 +123,7 @@ userRouter.post("/api/order", auth, async (req, res) => {
 
     for (const item of cart) {
       const product = await prisma.product.findUnique({
-        where: { id: item.product.id },
+        where: { id: parseInt(item.product.id) },
       });
 
       if (!product || product.quantity < item.quantity) {
@@ -141,7 +143,7 @@ userRouter.post("/api/order", auth, async (req, res) => {
     }
 
     // Clear user's cart
-    await prisma.cartItem.deleteMany({
+    await prisma.cart.deleteMany({
       where: { userId },
     });
 
@@ -169,6 +171,50 @@ userRouter.post("/api/order", auth, async (req, res) => {
 });
 
 // ===============================
+// BUY NOW (Single Product Order)
+// ===============================
+userRouter.post("/api/buy-now", auth, async (req, res) => {
+  try {
+    const { product, totalPrice, address } = req.body;
+    const userId = req.user;
+    
+    const dbProduct = await prisma.product.findUnique({
+      where: { id: parseInt(product.id) },
+    });
+
+    if (!dbProduct || dbProduct.quantity < 1) {
+      return res.status(400).json({ msg: `${dbProduct?.name || "Product"} is out of stock` });
+    }
+
+    // Decrease product stock
+    await prisma.product.update({
+      where: { id: dbProduct.id },
+      data: { quantity: dbProduct.quantity - 1 },
+    });
+
+    // Create order for single product without clearing cart
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        totalPrice,
+        address,
+        orderedAt: new Date(),
+        products: {
+          create: [{
+            productId: dbProduct.id,
+            quantity: 1,
+          }],
+        },
+      },
+    });
+
+    res.json(order);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ===============================
 // GET USER ORDERS
 // ===============================
 userRouter.get("/api/orders/me", auth, async (req, res) => {
@@ -180,6 +226,71 @@ userRouter.get("/api/orders/me", auth, async (req, res) => {
     });
 
     res.json(orders);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+// ===============================
+// ADD TO FAVORITES
+// ===============================
+userRouter.post('/api/add-favorite', auth, async (req, res) => {
+  try {
+    const { id } = req.body; // product id
+    const userId = req.user;
+    const productIdInt = parseInt(id);
+    // fetch user
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    // update favorites array, avoid duplicates
+    const currentFavs = Array.isArray(user.favorites) ? user.favorites : [];
+    const newFavs = [...new Set([...currentFavs, productIdInt])];
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { favorites: newFavs },
+    });
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ===============================
+// REMOVE FROM FAVORITES
+// ===============================
+userRouter.delete('/api/remove-favorite/:id', auth, async (req, res) => {
+  try {
+    const productIdInt = parseInt(req.params.id);
+    const userId = req.user;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    const newFav = (Array.isArray(user.favorites) ? user.favorites : []).filter((fid) => fid !== productIdInt);
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { favorites: newFav },
+    });
+    res.json(updated);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ===============================
+// GET FAVORITES
+// ===============================
+userRouter.get('/api/favorites', auth, async (req, res) => {
+  try {
+    const userId = req.user;
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    const favoriteIds = Array.isArray(user.favorites) ? user.favorites : [];
+    
+    const products = await prisma.product.findMany({
+      where: { id: { in: favoriteIds } },
+      include: { ratings: true },
+    });
+    
+    res.json(products);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

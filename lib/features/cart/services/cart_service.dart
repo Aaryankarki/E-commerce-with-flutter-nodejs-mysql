@@ -33,10 +33,10 @@ class CartServices {
         onSuccess: () {
           // User.fromMap(jsonDecode(res.body));
           User user = userProvider.user.copyWith(
-            cart: jsonDecode(res.body)['cart'],
+            cart: jsonDecode(res.body),
           );
           userProvider.setUserFromModel(user);
-          print('DEBUGsknfjsbnjfbhsD CART: ${jsonDecode(res.body)['cart']}');
+          print('DEBUGsknfjsbnjfbhsD CART: ${jsonDecode(res.body)}');
         },
       );
     } catch (e) {
